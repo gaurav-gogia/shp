@@ -41,6 +41,7 @@ func child(args []string) {
 	newRoot := "/home/ubuntu"
 	handle(syscall.Chroot(newRoot))
 	handle(syscall.Chdir("/"))
+	handle(syscall.Mount("proc", "proc", "proc", 0, ""))
 
 	handle(cmd.Run())
 }
