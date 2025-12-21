@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -63,9 +62,8 @@ func child(args []string) {
 	cmdArgs := args[1:]
 
 	handle(validateRootfs(rootfs))
-	handle(validateCmd(cmdArgs[0]))
+	binPath := getCmdPath(cmdArgs[0])
 
-	binPath := filepath.Join("/bin/", cmdArgs[0])
 	cmd := exec.Command(binPath, cmdArgs[1:]...)
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
@@ -133,12 +131,14 @@ func validateRootfs(rootfs string) error {
 	}
 	return nil
 }
-func validateCmd(cmdPath string) error {
+func getCmdPath(cmdPath string) string {
 	splits := strings.Split(cmdPath, "/")
 	if len(splits) > 1 {
-		return errors.New("provide command/program name instead of full path")
+		fmt.Printf("WARNING! Absolute path resolution for [%s] will be done based on the new rootfs (inside container).\n", cmdPath)
+		return cmdPath
 	}
-	return nil
+	fmt.Printf("INFO: Resolving command [%s] inside /bin of the new rootfs.\n", cmdPath)
+	return filepath.Join("/bin/", cmdPath)
 }
 
 func mountProc() error {
