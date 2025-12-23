@@ -88,6 +88,10 @@ func (p *PivotRootIsolator) Isolate(rootfs string) error {
 	if err != nil {
 		return fmt.Errorf("cannot get absolute path for %s: %w", rootfs, err)
 	}
+	err = syscall.Mount("", "/", "", syscall.MS_PRIVATE|syscall.MS_REC, "")
+	if err != nil {
+		return fmt.Errorf("failed to set mount propagation to private: %w", err)
+	}
 
 	oldRoot := filepath.Join(absNewRoot, oldRootDir)
 	if err := os.MkdirAll(oldRoot, 0700); err != nil {
