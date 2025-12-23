@@ -88,14 +88,6 @@ func (p *PivotRootIsolator) Isolate(rootfs string) error {
 	if err != nil {
 		return fmt.Errorf("cannot get absolute path for %s: %w", rootfs, err)
 	}
-	err = syscall.Mount(absNewRoot, absNewRoot, "", syscall.MS_BIND|syscall.MS_REC, "")
-	if err != nil {
-		return fmt.Errorf("failed to bind mount new root: %w", err)
-	}
-	err = syscall.Mount("", "/", "", syscall.MS_PRIVATE|syscall.MS_REC, "")
-	if err != nil {
-		return fmt.Errorf("failed to set mount propagation to private: %w", err)
-	}
 
 	oldRoot := filepath.Join(absNewRoot, oldRootDir)
 	if err := os.MkdirAll(oldRoot, 0700); err != nil {
@@ -113,6 +105,11 @@ func (p *PivotRootIsolator) Isolate(rootfs string) error {
 	// Unmount old root - non-critical, log but don't fail
 	if err := syscall.Unmount("/"+oldRootDir, syscall.MNT_DETACH); err != nil {
 		fmt.Printf("Warning: unmounting old root failed: %v\n", err)
+	}
+
+	// Remove old root directory - non-critical, log but don't fail
+	if err := os.Remove("/" + oldRootDir); err != nil {
+		fmt.Printf("Warning: removing old root directory failed: %v\n", err)
 	}
 
 	fmt.Println("Successfully using pivot_root")
